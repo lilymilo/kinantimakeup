@@ -33,8 +33,8 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <section className="intro-band shell" aria-label="Tentang Kinanti Makeup">
-        <div className="intro-statement">
+      <section className="intro-band" aria-label="Tentang Kinanti Makeup">
+        <div className="shell intro-statement">
           <p className="reveal">Untuk hari-hari yang ingin kamu ingat dengan perasaan yang sama indahnya.</p>
           <span className="hairline reveal" />
           <p className="intro-detail reveal">Setiap wajah punya cerita. Kami hadir untuk membantu kamu menemukan versi terbaiknya—tanpa menghilangkan siapa dirimu.</p>
