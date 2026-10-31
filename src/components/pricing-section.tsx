@@ -12,8 +12,28 @@ const standaloneServices: [string, string][] = [["Makeup Akad Tanpa Melati", "Rp
 export function PricingSection() {
   useMotion();
   const [packageId, setPackageId] = useState<keyof typeof packages | "">("");
+  const [wisudaOn, setWisudaOn] = useState(false);
   const [wisuda, setWisuda] = useState(0); const [bridesmaid, setBridesmaid] = useState(0); const [tunangan, setTunangan] = useState(false); const [date, setDate] = useState(""); const [location, setLocation] = useState("");
-  const lines = useMemo<{ name: string; meta?: string; amount: number }[]>(() => { const result: { name: string; meta?: string; amount: number }[] = []; if (packageId) result.push({ name: packages[packageId].name, amount: packages[packageId].price }); if (wisuda) result.push({ name: "Makeup Wisuda", meta: `${wisuda} orang`, amount: wisuda * 250000 }); if (tunangan) result.push({ name: "Makeup Tunangan", amount: 300000 }); if (packageId && bridesmaid) result.push({ name: "Bridesmaid", meta: `${bridesmaid} orang`, amount: bridesmaid * 200000 }); return result; }, [packageId, wisuda, bridesmaid, tunangan]);
+  const selectPackage = (id: keyof typeof packages) => {
+    if (packageId === id) { setPackageId(""); setBridesmaid(0); return; }
+    setPackageId(id); setWisudaOn(false); setWisuda(0); setTunangan(false); setBridesmaid(0);
+  };
+  const toggleWisuda = () => {
+    if (wisudaOn) { setWisudaOn(false); setWisuda(0); return; }
+    setWisudaOn(true); setWisuda(1); setPackageId(""); setBridesmaid(0);
+  };
+  const toggleTunangan = () => {
+    if (tunangan) { setTunangan(false); return; }
+    setTunangan(true); setPackageId(""); setBridesmaid(0); setWisudaOn(false); setWisuda(0);
+  };
+  const lines = useMemo<{ name: string; meta?: string; amount: number }[]>(() => {
+    const result: { name: string; meta?: string; amount: number }[] = [];
+    if (packageId) result.push({ name: packages[packageId].name, amount: packages[packageId].price });
+    if (wisudaOn && wisuda > 0) result.push({ name: "Makeup Wisuda", meta: `${wisuda} orang`, amount: wisuda * 250000 });
+    if (tunangan) result.push({ name: "Makeup Tunangan", amount: 300000 });
+    if (packageId && bridesmaid) result.push({ name: "Bridesmaid", meta: `${bridesmaid} orang`, amount: bridesmaid * 200000 });
+    return result;
+  }, [packageId, wisudaOn, wisuda, tunangan, bridesmaid]);
   const total: number = lines.reduce((sum: number, line: { amount: number }) => sum + line.amount, 0);
   const message = `Halo Kinanti Makeup, saya ingin konsultasi pemesanan.\n\n${lines.map((line) => `${line.name}${line.meta ? ` (${line.meta})` : ""}: ${rupiah(line.amount)}`).join("\n")}\n\nSubtotal estimasi makeup: ${rupiah(total)}\nTanggal acara: ${date || "Belum ditentukan"}\nLokasi acara: ${location || "Belum ditentukan"}\n\nEstimasi awal — mohon konfirmasi ketersediaan, kombinasi layanan, dan biaya perjalanan. Terima kasih.`;
   return (
@@ -32,11 +52,16 @@ export function PricingSection() {
           <form className="booking reveal" onSubmit={(event) => event.preventDefault()}>
             <div className="booking-group">
               <p className="booking-label">Paket utama — pilih satu</p>
-              {(Object.keys(packages) as (keyof typeof packages)[]).map((id) => <button type="button" className={`package-option${packageId === id ? " is-selected" : ""}`} aria-pressed={packageId === id} onClick={() => { setPackageId(packageId === id ? "" : id); if (packageId === id) setBridesmaid(0); }} key={id}><span className="package-option-name">{packages[id].name}{id === "akad" ? <s>{rupiah(2700000)}</s> : null}</span><strong>{rupiah(packages[id].price)}</strong></button>)}
-              <button type="button" className={`package-option${tunangan ? " is-selected" : ""}`} aria-pressed={tunangan} onClick={() => setTunangan(!tunangan)}><span className="package-option-name">Makeup Tunangan <i>layanan mandiri</i></span><strong>{rupiah(300000)}</strong></button>
+              {(Object.keys(packages) as (keyof typeof packages)[]).map((id) => <button type="button" className={`package-option${packageId === id ? " is-selected" : ""}`} aria-pressed={packageId === id} onClick={() => selectPackage(id)} key={id}><span className="package-option-name">{packages[id].name}{id === "akad" ? <s>{rupiah(2700000)}</s> : null}</span><strong>{rupiah(packages[id].price)}</strong></button>)}
             </div>
-            <div className="booking-group booking-steps"><Stepper label="Makeup wisuda" value={wisuda} onChange={setWisuda} /><Stepper label="Bridesmaid" value={bridesmaid} onChange={setBridesmaid} disabled={!packageId} /></div>
-            <p className="booking-hint">Bridesmaid adalah tambahan untuk paket utama. Wisuda dan tunangan dapat dipesan mandiri.</p>
+            <div className="booking-group">
+              <p className="booking-label">Layanan mandiri — tanpa paket utama</p>
+              <button type="button" className={`package-option${wisudaOn ? " is-selected" : ""}`} aria-pressed={wisudaOn} onClick={toggleWisuda}><span className="package-option-name">Makeup Wisuda <i>layanan mandiri</i></span><strong>{rupiah(250000)}<em>/ orang</em></strong></button>
+              {wisudaOn && <Stepper label="Jumlah orang makeup wisuda" value={wisuda} onChange={setWisuda} />}
+              <button type="button" className={`package-option${tunangan ? " is-selected" : ""}`} aria-pressed={tunangan} onClick={toggleTunangan}><span className="package-option-name">Makeup Tunangan <i>layanan mandiri</i></span><strong>{rupiah(300000)}</strong></button>
+            </div>
+            <div className="booking-group booking-steps"><Stepper label="Bridesmaid (tambahan paket utama)" value={bridesmaid} onChange={setBridesmaid} disabled={!packageId} /></div>
+            <p className="booking-hint">Pilih satu paket utama atau layanan mandiri — keduanya tidak bisa digabung. Bridesmaid hanya sebagai tambahan paket utama. Makeup wisuda dihitung Rp250.000 per orang.</p>
             <div className="booking-group booking-meta">
               <label>Tanggal acara<input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
               <label>Lokasi acara<input type="text" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="Contoh: Bogor" /></label>
